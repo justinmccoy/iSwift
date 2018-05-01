@@ -1,5 +1,5 @@
-FROM jupyter/minimal-notebook:1af3089901bb
-#FROM jupyter/tensorflow-notebook:1af3089901bb
+FROM jupyter/tensorflow-notebook:1af3089901bb
+#FROM jupyter/minimal-notebook:1af3089901bb
 
 USER root
 
