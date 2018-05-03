@@ -9,8 +9,7 @@ WORKDIR /root
 # These apt-get packages are the only unpinned dependencies, so they are presumably
 # the only elements in the image build process that introduce the risk of
 # non-reproducibility. That is, they could in theory change in a way that
-# broke backward compatibility, and caused subsequent builds of the docker image
-# to function differently.
+# caused subsequent builds of the docker image to function differently.
 
 # Install related packages and set LLVM 3.8 as the compiler
 # Some of these packages are needed for swift-tensorflow,not just plain old swift and iSwift
@@ -38,7 +37,7 @@ RUN apt-get -q update && \
 # RUN apt-get update && \
 # apt-get -y install build-essential
 
-# Install ZMQ
+# Install ZMQ, needed to build and run the the iSwift kernel
 RUN cd /tmp/ \
     && curl -L -O https://github.com/zeromq/zeromq4-1/releases/download/v4.1.4/zeromq-4.1.4.tar.gz \
     && tar xf /tmp/zeromq-4.1.4.tar.gz \
@@ -49,7 +48,8 @@ RUN cd /tmp/ \
     && ldconfig
 
 #
-# Build and install ordinary release version of Swift in its ordinary home
+# Fetch, build, and install the Swift 4.1 release, which we need
+# to build iSwift
 #
 
 # Everything up to here should cache nicely between Swift versions, assuming dev dependencies change little
@@ -114,7 +114,8 @@ RUN chown -R ${NB_USER} /kernels/iSwift
 USER $NB_USER
 
 #
-# Fetch, and build swift-tensorflow, which is the version of Swift that 
+# Fetch, and build swift-tensorflow, the version for
+# fancy interop with tensorflow
 #
 USER root
 RUN mkdir -p /swiftdev
@@ -129,9 +130,6 @@ RUN mkdir -p swift-tensorflow-toolchain/usr
 # The URL for the swift-tensorflow dev build
 ENV SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATFORM/$SWIFT_TF_VERSION-$SWIFT_TF_PLATFORM.tar.gz
 RUN echo "SWIFT_TF_URL=$SWIFT_TF_URL"
-# installing this dev toolchain directly into /usr. Would be tidier to put it in its own dir, but then
-# we'd need to update PATH etc as well. Seeing if this is good enough for a container.
-# This may be a mistake b/c it's introducing an incompatible mix of llvm and lldb libraries
 RUN SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATFORM/$SWIFT_TF_VERSION-$SWIFT_TF_PLATFORM.tar.gz \
     && curl -fSsL $SWIFT_TF_URL -o swift.tar.gz \
     && tar -xzf swift.tar.gz --directory=swift-tensorflow-toolchain/usr --strip-components=1 \
@@ -140,7 +138,7 @@ RUN SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATF
 
 RUN chown -R ${NB_USER} /swiftdev
 
-RUN echo  "swift-tensorflow bin at: /root/swift-tensorflow-toolchain/usr/bin:${PATH}" 
+RUN echo  "swift-tensorflow bin at: /swiftdev/swift-tensorflow-toolchain/usr/bin:${PATH}" 
 
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}

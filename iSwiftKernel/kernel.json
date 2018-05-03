@@ -1,5 +1,5 @@
 {
  "argv": ["/kernels/iSwift/.build/debug/iSwift", "-f", "{connection_file}"],
- "display_name": "Swift",
+ "display_name": "Swift-TensorFlow",
  "language": "swift"
 }
