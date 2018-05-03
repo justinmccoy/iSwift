@@ -43,6 +43,8 @@ ENV SWIFT_PLATFORM=$SWIFT_PLATFORM \
     SWIFT_BRANCH=$SWIFT_BRANCH \
     SWIFT_VERSION=$SWIFT_VERSION
 
+RUN mkdir -p swift-tensorflow-toolchain/usr
+
 # Download GPG keys, signature and Swift package, then unpack, cleanup and execute permissions for foundation libs
 ENV SWIFT_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_PLATFORM/$SWIFT_VERSION-$SWIFT_PLATFORM.tar.gz
 RUN echo "SWIFT_URL=$SWIFT_URL"
@@ -51,9 +53,13 @@ RUN echo "SWIFT_URL=$SWIFT_URL"
 # This may be a mistake b/c it's introducing an incompatible mix of llvm and lldb libraries
 RUN SWIFT_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_PLATFORM/$SWIFT_VERSION-$SWIFT_PLATFORM.tar.gz \
     && curl -fSsL $SWIFT_URL -o swift.tar.gz \
-    && tar -xzf swift.tar.gz --directory /usr --strip-components=1 \
+    && tar -xzf swift.tar.gz --directory=swift-tensorflow-toolchain/usr --strip-components=1 \
     && rm -r  swift.tar.gz \
-    && chmod -R o+r /usr/lib/swift
+    && chmod -R o+r swift-tensorflow-toolchain/usr
+
+ENV PATH="/root/swift-tensorflow-toolchain/usr/bin:${PATH}"
+
+RUN echo "PATH=$PATH"
 
 # Print Installed Swift Version
 RUN swift --version
@@ -78,7 +84,7 @@ RUN mkdir -p /kernels/iSwift
 # itself which are irrelevant to the image
 COPY Includes /kernels/iSwift/Includes/
 COPY Package.swift /kernels/iSwift/
-COPY Sources iSwiftKernel /kernels/iSwift/Sources/
+COPY Sources /kernels/iSwift/Sources/
 COPY iSwiftKernel /kernels/iSwift/iSwiftKernel/
 WORKDIR /kernels/iSwift
 RUN swift package update
