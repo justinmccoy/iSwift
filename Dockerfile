@@ -98,15 +98,18 @@ RUN mkdir -p /kernels/iSwift
 # itself which are irrelevant to the image
 COPY Includes /kernels/iSwift/Includes/
 COPY Package.swift /kernels/iSwift/
-COPY Sources iSwiftKernel /kernels/iSwift/Sources/
+COPY Sources /kernels/iSwift/Sources/
 COPY iSwiftKernel /kernels/iSwift/iSwiftKernel/
+COPY iSwiftTensorFlowKernel /kernels/iSwift/iSwiftTensorFlowKernel/
 WORKDIR /kernels/iSwift
 RUN swift package update
 RUN swift build
 
 # install the iSwift kernelspec into jupyter as the NB_USER
+# install the iSwiftTensorFlow kernelspec into jupyter as the NB_USER
 USER ${NB_USER}
 RUN jupyter kernelspec install --user /kernels/iSwift/iSwiftKernel
+RUN jupyter kernelspec install --user /kernels/iSwift/iSwiftTensorFlowKernel
 
 # Change the Swift kernel executable to be onwed by NB_USER, so we can run it
 USER root
@@ -138,7 +141,7 @@ RUN SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATF
 
 RUN chown -R ${NB_USER} /swiftdev
 
-RUN echo  "swift-tensorflow bin at: /swiftdev/swift-tensorflow-toolchain/usr/bin:${PATH}" 
+RUN echo  "swift-tensorflow bin at: /swiftdev/swift-tensorflow-toolchain/usr/bin" 
 
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}
