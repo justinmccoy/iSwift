@@ -13,6 +13,7 @@ WORKDIR /root
 # to function differently.
 
 # Install related packages and set LLVM 3.8 as the compiler
+# Some of these packages are needed for swift-tensorflow,not just plain old swift and iSwift
 RUN apt-get -q update && \
     apt-get -q install -y \
     make \
@@ -47,55 +48,63 @@ RUN cd /tmp/ \
     && make install \
     && ldconfig
 
+#
+# Build and install ordinary release version of Swift in its ordinary home
+#
+
 # Everything up to here should cache nicely between Swift versions, assuming dev dependencies change little
 ARG SWIFT_PLATFORM=ubuntu16.04
 ARG SWIFT_BRANCH=swift-4.1-release
-ARG SWIFT_VERSION=swift-tensorflow-DEVELOPMENT-2018-04-26-a
+ARG SWIFT_VERSION=swift-4.1-RELEASE
 
 ENV SWIFT_PLATFORM=$SWIFT_PLATFORM \
     SWIFT_BRANCH=$SWIFT_BRANCH \
     SWIFT_VERSION=$SWIFT_VERSION
 
-RUN mkdir -p swift-tensorflow-toolchain/usr
-
-# The URL for the swift-tensorflow dev build
-ENV SWIFT_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_PLATFORM/$SWIFT_VERSION-$SWIFT_PLATFORM.tar.gz
-RUN echo "SWIFT_URL=$SWIFT_URL"
-# installing this dev toolchain directly into /usr. Would be tidier to put it in its own dir, but then
-# we'd need to update PATH etc as well. Seeing if this is good enough for a container.
-# This may be a mistake b/c it's introducing an incompatible mix of llvm and lldb libraries
-RUN SWIFT_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_PLATFORM/$SWIFT_VERSION-$SWIFT_PLATFORM.tar.gz \
+# Download GPG keys, signature and Swift package, then unpack, cleanup and execute permissions for foundation libs
+RUN SWIFT_URL=https://swift.org/builds/$SWIFT_BRANCH/$(echo "$SWIFT_PLATFORM" | tr -d .)/$SWIFT_VERSION/$SWIFT_VERSION-$SWIFT_PLATFORM.tar.gz \
     && curl -fSsL $SWIFT_URL -o swift.tar.gz \
-    && tar -xzf swift.tar.gz --directory=swift-tensorflow-toolchain/usr --strip-components=1 \
-    && rm -r  swift.tar.gz \
-    && chmod -R o+r swift-tensorflow-toolchain/usr
-
-# Sets the path for the duration of the image build process, but (I think) does not update it for when the container runs. Should do that as well.
-ENV PATH="/root/swift-tensorflow-toolchain/usr/bin:${PATH}"
-
-RUN echo "PATH=$PATH"
+    && curl -fSsL $SWIFT_URL.sig -o swift.tar.gz.sig \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && set -e; \
+        for key in \
+      # pub   rsa4096 2017-11-07 [SC] [expires: 2019-11-07]
+      # 8513444E2DA36B7C1659AF4D7638F1FB2B2B08C4
+      # uid           [ unknown] Swift Automatic Signing Key #2 <swift-infrastructure@swift.org>
+          8513444E2DA36B7C1659AF4D7638F1FB2B2B08C4 \
+      # pub   4096R/91D306C6 2016-05-31 [expires: 2018-05-31]
+      #       Key fingerprint = A3BA FD35 56A5 9079 C068  94BD 63BC 1CFE 91D3 06C6
+      # uid                  Swift 3.x Release Signing Key <swift-infrastructure@swift.org>
+          A3BAFD3556A59079C06894BD63BC1CFE91D306C6 \
+      # pub   4096R/71E1B235 2016-05-31 [expires: 2019-06-14]
+      #       Key fingerprint = 5E4D F843 FB06 5D7F 7E24  FBA2 EF54 30F0 71E1 B235
+      # uid                  Swift 4.x Release Signing Key <swift-infrastructure@swift.org>
+          5E4DF843FB065D7F7E24FBA2EF5430F071E1B235 \
+        ; do \
+          gpg --quiet --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+        done \
+    && gpg --batch --verify --quiet swift.tar.gz.sig swift.tar.gz \
+    && tar -xzf swift.tar.gz --directory / --strip-components=1 \
+    && rm -r "$GNUPGHOME" swift.tar.gz.sig swift.tar.gz \
+    && chmod -R o+r /usr/lib/swift
 
 # Print Installed Swift Version
 RUN swift --version
 
-# Build swift kernel executable as root in /kernels/iSwift
+# Build iSwift
 RUN mkdir -p /kernels/iSwift
 # copy only the Swift package itself and iSwiftKernel, so that we don't
 # trigger image rebuilds when we edit docs or pieces of the Dockerfile
 # itself which are irrelevant to the image
 COPY Includes /kernels/iSwift/Includes/
 COPY Package.swift /kernels/iSwift/
-COPY Sources /kernels/iSwift/Sources/
+COPY Sources iSwiftKernel /kernels/iSwift/Sources/
 COPY iSwiftKernel /kernels/iSwift/iSwiftKernel/
 WORKDIR /kernels/iSwift
-
-# update packages for the iSwift project
 RUN swift package update
-
-# build the iSwift project
 RUN swift build
 
-# Install the kernelspec into jupyter as the NB_USER
+# install the iSwift kernelspec into jupyter as the NB_USER
 USER ${NB_USER}
 RUN jupyter kernelspec install --user /kernels/iSwift/iSwiftKernel
 
@@ -103,6 +112,35 @@ RUN jupyter kernelspec install --user /kernels/iSwift/iSwiftKernel
 USER root
 RUN chown -R ${NB_USER} /kernels/iSwift
 USER $NB_USER
+
+#
+# Fetch, and build swift-tensorflow, which is the version of Swift that 
+#
+USER root
+RUN mkdir -p /swiftdev
+WORKDIR /swiftdev
+# Everything up to here should cache nicely between Swift versions, assuming dev dependencies change little
+
+ENV SWIFT_TF_PLATFORM=ubuntu16.04
+ENV SWIFT_TF_VERSION=swift-tensorflow-DEVELOPMENT-2018-04-26-a
+
+RUN mkdir -p swift-tensorflow-toolchain/usr
+
+# The URL for the swift-tensorflow dev build
+ENV SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATFORM/$SWIFT_TF_VERSION-$SWIFT_TF_PLATFORM.tar.gz
+RUN echo "SWIFT_TF_URL=$SWIFT_TF_URL"
+# installing this dev toolchain directly into /usr. Would be tidier to put it in its own dir, but then
+# we'd need to update PATH etc as well. Seeing if this is good enough for a container.
+# This may be a mistake b/c it's introducing an incompatible mix of llvm and lldb libraries
+RUN SWIFT_TF_URL=https://storage.googleapis.com/swift-tensorflow/$SWIFT_TF_PLATFORM/$SWIFT_TF_VERSION-$SWIFT_TF_PLATFORM.tar.gz \
+    && curl -fSsL $SWIFT_TF_URL -o swift.tar.gz \
+    && tar -xzf swift.tar.gz --directory=swift-tensorflow-toolchain/usr --strip-components=1 \
+    && rm -r  swift.tar.gz \
+    && chmod -R o+r swift-tensorflow-toolchain/usr
+
+RUN chown -R ${NB_USER} /swiftdev
+
+RUN echo  "swift-tensorflow bin at: /root/swift-tensorflow-toolchain/usr/bin:${PATH}" 
 
 USER ${NB_USER}
 WORKDIR /home/${NB_USER}

@@ -22,7 +22,7 @@ class MessageProcessor {
     static var session: String = ""
     
     fileprivate static let replWrapper = try! REPLWrapper(
-        command: ["/usr/bin/swift","-I","/usr/lib/swift/clang/include/"], // Work around swift include bug on Linux
+        command: ["/swiftdev/swift-tensorflow-toolchain/usr/bin/swift","-I","/swiftdev/swift-tensorflow-toolchain/usr/lib/swift/clang/include/"], // Work around swift include bug on Linux
         prompt: "^\\s*\\d+>\\s*$",
         continuePrompt: "^\\s*\\d+\\.\\s*$")
     
