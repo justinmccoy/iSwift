@@ -42,7 +42,7 @@ open class Kernel {
     open static let sharedInstance = Kernel()
 
     fileprivate var totalExecutionCount = 0
-    fileprivate var invocationArguments:[String] = []
+    fileprivate var replCommand:[String]? = nil
 
     let context = try? Context()
     let socketQueue = DispatchQueue(label: "com.uthoft.iswift.kernel.socketqueue",  attributes: Dispatch.DispatchQueue.Attributes.concurrent)
@@ -52,9 +52,15 @@ open class Kernel {
         let cli = CommandLine(arguments: arguments)
         cli.addOptions(connectionFileOption)
         try! cli.parse()
-        let v = cli.unparsedArguments
-        self.invocationArguments = (v.isEmpty ? v : Array(v[1...]))
-        print("self.invocationArguments = \(self.invocationArguments)")
+
+      // if we were called with -- on the command line, treat subsequent
+      // command line arguments as the command and arguments to invoke the REPL.
+      // otherwise, accept default behavior
+        
+        if let firstUnparsedArg = cli.unparsedArguments.first, firstUnparsedArg == "--"
+        {
+          self.replCommand = Array(cli.unparsedArguments[1...])
+        }
 
         guard let connectionFilePath = connectionFileOption.value else {
             Logger.info.print("No connection file path given.")
@@ -154,7 +160,8 @@ open class Kernel {
         return socket
     }
 
-    private func createMessageSocket(_ context: Context, transport: TransportType, ip: String, port: Int, key: String, type: SocketType) throws {
+    private func createMessageSocket(_ context: Context, transport: TransportType, ip: String, port: Int, key: String, type: SocketType) throws
+    {
         let taskFactory = TaskFactory()
         let socket = try createSocket(context, transport: transport, ip: ip, port: port, type: type)
         let inSocketMessageQueue = BlockingQueue<SerializedMessage>()
@@ -171,6 +178,15 @@ open class Kernel {
         }
 
         taskFactory.startNew {
+          [theReplCommand = self.replCommand] in
+
+          if let theReplCommand = theReplCommand {
+            MessageProcessor.replWrapper = try! REPLWrapper(
+              command: theReplCommand,
+              prompt: "^\\s*\\d+>\\s*$",
+              continuePrompt: "^\\s*\\d+\\.\\s*$")
+          }
+
             MessageProcessor.run(decodedMessageQueue,
                                  outMessageQueue: processedMessageQueue)
         }
