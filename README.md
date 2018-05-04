@@ -11,7 +11,11 @@ $ docker run -t -i -p 8888:8888 --privileged algalgal/swift-tensorflow-notebook
 Open the URL you see in the console to reach Jupyter. From there you
 can select `New` -> `Swift` or `New` -> `Swift for TensorFlow`.
 
+TensorFlow looks as you'd expect:
 
+<p align="center">
+  <img src="images/screenshot.png">
+</p>
 
 ## Capabilities
 
