@@ -17,9 +17,9 @@ class MessageProcessor {
         return _executionCount
     }
     
-    static var _executionCount: Int = 0
+    fileprivate static var _executionCount: Int = 0
     
-    static var session: String = ""
+    fileprivate static var session: String = ""
     
     fileprivate static let replWrapper = try! REPLWrapper(
         command: ["/swiftdev/swift-tensorflow-toolchain/usr/bin/swift","-I","/swiftdev/swift-tensorflow-toolchain/usr/lib/swift/clang/include/"], // Work around swift include bug on Linux
