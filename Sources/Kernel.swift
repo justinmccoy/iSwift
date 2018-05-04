@@ -51,7 +51,8 @@ open class Kernel {
         let cli = CommandLine(arguments: arguments)
         cli.addOptions(connectionFileOption)
         try! cli.parse()
-        self.invocationArguments = cli.unparsedArguments
+        let v = cli.unparsedArguments
+        self.invocationArguments = (v.isEmpty ? v : Array(v[1...]))
         print("self.invocationArguments = \(self.invocationArguments)")
 
         guard let connectionFilePath = connectionFileOption.value else {
