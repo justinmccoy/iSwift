@@ -1,5 +1,7 @@
 {
- "argv": ["/kernels/iSwift/.build/debug/iSwift", "-f", "{connection_file}"],
- "display_name": "Swift",
- "language": "swift"
+    "argv": ["/kernels/iSwift/.build/debug/iSwift", "-f", "{connection_file}",
+             "--",
+             "/usr/bin/swift","-I","/usr/lib/swift/clang/include/"],
+    "display_name": "Swift",
+    "language": "swift"
 }

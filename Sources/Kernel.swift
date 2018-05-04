@@ -42,6 +42,7 @@ open class Kernel {
     open static let sharedInstance = Kernel()
 
     fileprivate var totalExecutionCount = 0
+    fileprivate var invocationArguments:[String] = []
 
     let context = try? Context()
     let socketQueue = DispatchQueue(label: "com.uthoft.iswift.kernel.socketqueue",  attributes: Dispatch.DispatchQueue.Attributes.concurrent)
@@ -50,6 +51,8 @@ open class Kernel {
         let cli = CommandLine(arguments: arguments)
         cli.addOptions(connectionFileOption)
         try! cli.parse()
+        self.invocationArguments = cli.unparsedArguments
+        print("self.invocationArguments = \(self.invocationArguments)")
 
         guard let connectionFilePath = connectionFileOption.value else {
             Logger.info.print("No connection file path given.")
@@ -166,7 +169,8 @@ open class Kernel {
         }
 
         taskFactory.startNew {
-            MessageProcessor.run(decodedMessageQueue, outMessageQueue: processedMessageQueue)
+            MessageProcessor.run(decodedMessageQueue,
+                                 outMessageQueue: processedMessageQueue)
         }
 
         taskFactory.startNew {
