@@ -5,7 +5,7 @@ iSwift lets you use Swift, and Swift for TensorFlow, in Jupyter notebooks.
 The easiest way of using this is via the [docker image](https://hub.docker.com/r/algalgal/swift-notebook/).
 
 ```bash
-$ docker run -t -i -p 8888:8888 --privileged algalgal/swift-tensorflow-notebook
+$ docker run -t -i -p 8888:8888 --privileged algalgal/swift-tensorflow-notebook:e539cdea6632
 ```
 
 Open the URL you see in the console to reach Jupyter. From there you
