@@ -47,6 +47,7 @@ open class Kernel {
     let context = try? Context()
     let socketQueue = DispatchQueue(label: "com.uthoft.iswift.kernel.socketqueue",  attributes: Dispatch.DispatchQueue.Attributes.concurrent)
 
+    /// Parses command line arguments and starts listening.
     open func start(_ arguments: [String]) throws {
         let cli = CommandLine(arguments: arguments)
         cli.addOptions(connectionFileOption)
