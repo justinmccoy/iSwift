@@ -1,0 +1,7 @@
+{
+    "argv": ["/kernels/iSwift/.build/debug/iSwift", "-f", "{connection_file}",
+             "--",
+             "/swiftdev/swift-tensorflow-toolchain/usr/bin/swift","-I","/swiftdev/swift-tensorflow-toolchain/usr/lib/swift/clang/include/"],
+    "display_name": "Swift-TensorFlow",
+    "language": "swift"
+}

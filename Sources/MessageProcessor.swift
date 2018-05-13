@@ -17,15 +17,21 @@ class MessageProcessor {
         return _executionCount
     }
     
-    static var _executionCount: Int = 0
+    fileprivate static var _executionCount: Int = 0
     
-    static var session: String = ""
-    
-    fileprivate static let replWrapper = try! REPLWrapper(
+    fileprivate static var session: String = ""
+
+    /// REPL wrapper. To override this default value, assign to this var before calling `run`.
+    internal static var replWrapper = try! REPLWrapper(
         command: ["/usr/bin/swift","-I","/usr/lib/swift/clang/include/"], // Work around swift include bug on Linux
         prompt: "^\\s*\\d+>\\s*$",
         continuePrompt: "^\\s*\\d+\\.\\s*$")
-    
+
+  /**
+   Starts a loop to process messages.
+
+   This is the entry point.
+   */
     static func run(_ inMessageQueue: BlockingQueue<Message>, outMessageQueue: BlockingQueue<Message>) {
         while true {
             let message = inMessageQueue.take()
