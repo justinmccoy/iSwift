@@ -8,8 +8,8 @@
 
 import Foundation
 import Dispatch
-import SourceKit
-import SourceKittenFramework
+
+
 
 class MessageProcessor {
     static var executionCount: Int {
@@ -70,20 +70,7 @@ class MessageProcessor {
                 }
                 
                 replyContent = ShutdownReply(restart: content.restart)
-            case .CompleteReply:
-                let content = message.content as! CompleteRequest
-                
-                let path = "\(UUID().uuidString).swift"
-                let r = Request.codeCompletionRequest(file: path, contents: content.code, offset: Int64(content.cursorPosition), arguments: ["-c", path, "-sdk", sdkPath()])
-                
-                Logger.debug.print("Sending sourcekitten request -- \(r)")
-                
-                let completionItems = CodeCompletionItem.parse(response: try! r.send())
-                let matches = completionItems.flatMap { $0.descriptionKey }
-                let cursorEnd = content.cursorPosition
-                let cursorStartOffset = completionItems.first?.numBytesToErase ?? 0
-                
-                replyContent = CompleteReply(matches: matches, cursorStart: cursorEnd - Int(cursorStartOffset), cursorEnd: cursorEnd, status: "ok")
+            
             default:
                 continue
             }

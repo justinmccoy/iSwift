@@ -1,2 +1,2 @@
 #!/bin/sh
-exec docker build -t algalgal/swift-tensorflow-notebook .
+exec docker build -t sholmes/swift-tensorflow-notebook .

@@ -8,8 +8,7 @@ let package = Package(
         .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "0.0.0"),
         .package(url: "https://github.com/DanToml/Jay.git", from: "1.0.0"),
         .package(url: "https://github.com/jatoben/CommandLine", .exact("3.0.0-pre1")),
-        .package(url: "https://github.com/jensravens/interstellar.git", from: "2.0.0"),
-        .package(url: "https://github.com/jpsim/SourceKitten.git", .exact("0.20.0"))
+        .package(url: "https://github.com/jensravens/interstellar.git", from: "2.0.0")
     ],
     targets: [
         .target(
@@ -19,8 +18,7 @@ let package = Package(
                 "Cryptor",
                 "Jay",
                 "CommandLine",
-                "Interstellar",
-                "SourceKittenFramework"
+                "Interstellar"
             ],
             path: "Sources"
         )
